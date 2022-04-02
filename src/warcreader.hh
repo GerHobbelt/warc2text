@@ -1,7 +1,7 @@
 #ifndef WARC2TEXT_WARCREADER_HH
 #define WARC2TEXT_WARCREADER_HH
 
-#include "zlib.h"
+#include "zlib-ng.h"
 #include <string>
 
 namespace warc2text {
@@ -14,7 +14,7 @@ namespace warc2text {
         private:
             std::FILE* file;
             std::string warc_filename;
-            z_stream s{};
+            zng_stream s{};
             static const std::size_t BUFFER_SIZE = 4096;
             uint8_t* buf;
             uint8_t* scratch;
