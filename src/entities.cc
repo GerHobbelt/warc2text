@@ -82,7 +82,7 @@ namespace entities {
 	                ++end_pos;
 		} catch (std::invalid_argument const& ex){
 			// invalid numeric entity code
-			// append the the consumed chars
+			// append the consumed chars
 			target.append(source, pos, end_pos-pos);
 		}
             }
