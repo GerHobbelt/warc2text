@@ -9,6 +9,9 @@
 #include <boost/algorithm/string/split.hpp>
 #include "src/warcpreprocessor.hh"
 
+#include "src/monolithic_examples.h"
+
+
 using namespace warc2text;
 
 struct Options {
@@ -26,7 +29,7 @@ struct Options {
     bool encodeURLs{};
 };
 
-void parseArgs(int argc, char *argv[], Options& out) {
+static void parseArgs(int argc, const char **argv, Options& out) {
     namespace po = boost::program_options;
     po::options_description desc("Arguments");
     desc.add_options()
@@ -75,7 +78,11 @@ void parseArgs(int argc, char *argv[], Options& out) {
 }
 
 
-int main(int argc, char *argv[]) {
+#if defined(BUILD_MONOLITHIC)
+#define main     warc2text_main
+#endif
+
+int main(int argc, const char **argv) {
     // parse arguments
     Options options;
     parseArgs(argc,argv, options);
