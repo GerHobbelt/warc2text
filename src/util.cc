@@ -12,7 +12,8 @@
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/locale.hpp>
 #include <boost/log/trivial.hpp>
-#include <uchardet/uchardet.h>
+//#include <uchardet/uchardet.h>
+#include <uchardet.h>
 #include "preprocess/base64.hh"
 
 namespace util {
@@ -105,11 +106,14 @@ namespace util {
             }
             umap_attr_filters_regex& attrs = filters[fields.at(0)];
             std::vector<umap_attr_regex>& values = attrs[fields.at(1)];
-            for (unsigned int i = 2; i < fields.size(); ++i)
-                values.emplace_back((umap_attr_regex){
-                    std::regex(fields.at(i), std::regex::optimize | std::regex::nosubs),
-                    fields.at(i)
-                });
+			for (unsigned int i = 2; i < fields.size(); ++i) {
+				// fix: error C4576: a parenthesized type followed by an initializer list is a non-standard explicit type conversion syntax
+				umap_attr_regex re{
+					std::regex(fields.at(i), std::regex::optimize | std::regex::nosubs),
+						fields.at(i)
+				};
+				values.emplace_back(re);
+			}
         }
         f.close();
     }
