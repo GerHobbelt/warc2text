@@ -16,7 +16,7 @@ namespace warc2text {
         s.avail_in = 0;
         s.next_in = buf;
 
-        if (inflateInit2(&s, 32) != Z_OK) {
+        if (zng_inflateInit2(&s, 32) != Z_OK) {
           BOOST_LOG_TRIVIAL(error) << "Failed to init zlib";
           abort();
         }
@@ -29,7 +29,7 @@ namespace warc2text {
     WARCReader::~WARCReader(){
         delete[] buf;
         delete[] scratch;
-        inflateEnd(&s);
+        zng_inflateEnd(&s);
         closeFile();
     }
 
@@ -53,7 +53,7 @@ namespace warc2text {
             while (inflate_ret != Z_STREAM_END && s.avail_in != 0) {
                 s.next_out = scratch;
                 s.avail_out = BUFFER_SIZE;
-                inflate_ret = inflate(&s, Z_NO_FLUSH);
+                inflate_ret = zng_inflate(&s, Z_NO_FLUSH);
                 if (inflate_ret != Z_OK && inflate_ret != Z_STREAM_END) {
                     BOOST_LOG_TRIVIAL(error) << "WARC " << warc_filename << ": error during decompressing";
                     out.clear();
@@ -67,7 +67,7 @@ namespace warc2text {
                 }
             }
             if (inflate_ret == Z_STREAM_END) {
-                if (inflateReset(&s) != Z_OK) {
+                if (zng_inflateReset(&s) != Z_OK) {
                   BOOST_LOG_TRIVIAL(error) << "Failed to reset zlib";
                   abort();
                 }

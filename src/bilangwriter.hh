@@ -4,14 +4,14 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "record.hh"
-#include "zlib.h"
+#include "zlib-ng.h"
 
 namespace warc2text {
 
     class GzipWriter {
         private:
             FILE* dest;
-            z_stream s{};
+            zng_stream s{};
             unsigned char* buf;
             std::size_t compressed;
             void compress(const char* in, std::size_t size, int flush);

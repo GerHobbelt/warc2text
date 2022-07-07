@@ -11,7 +11,7 @@ namespace warc2text{
         s.zalloc = nullptr;
         s.zfree = nullptr;
         s.opaque = nullptr;
-        int ret = deflateInit2(&s, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 31, 8, Z_DEFAULT_STRATEGY);
+        int ret = zng_deflateInit2(&s, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 31, 8, Z_DEFAULT_STRATEGY);
         assert(ret == Z_OK);
         buf = new unsigned char[BUFFER_SIZE];
     }
@@ -19,7 +19,7 @@ namespace warc2text{
     GzipWriter::~GzipWriter() {
         if (dest) {
             this->compress("", 0, Z_FINISH);
-            deflateEnd(&s);
+            zng_deflateEnd(&s);
             std::fclose(dest);
         }
         delete[] buf;
@@ -36,7 +36,7 @@ namespace warc2text{
         while (s.avail_out == 0) {
             s.avail_out = BUFFER_SIZE;
             s.next_out = buf;
-            ret = deflate(&s, flush);
+            ret = zng_deflate(&s, flush);
             assert(ret == Z_OK || ret == Z_STREAM_END); // Z_STREAM_END only happens if flush == Z_FINISH
             compressed = BUFFER_SIZE - s.avail_out;
             //written = std::fwrite(buf, 1, compressed, dest);
