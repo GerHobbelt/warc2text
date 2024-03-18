@@ -50,8 +50,9 @@ warc2text -o <output_folder> [ -f <output_files> ] [ --pdfpass <output_warc> ]
 ```
 
 * `--output`/`-o` output folder
-* `--files`/`-f` list of output files separated by commas (and without `.gz`); Options are `text`,`html`,`url`,`mime`,`file` and `date`. Defaults to `text,url`. See [output](#output).
-* `--jsonl` Produce JSON Lines on stdout instead of writing to files per language.
+* `--files`/`-f` list of output files separated by commas (and without `.gz`); Options are `text`,`html`,`metadata`, `url`,`mime`,`file` and `date`. Defaults to `text,url`. See [output](#output).
+* `--jsonl` Produce JSON Lines for `html` and `text` files instead of base64 encoding.
+* `--stdout` Write all the information in JSONLines to stdout. Needs --jsonl option.
 * `--pdfpass` WARC file where PDF records will be stored
 * `--robotstxtpass` WARC file where robots.txt related records will be stored
 * `--encode-urls` Escape non-ascii characters that appear in the record URL with `%dd` encoding.
@@ -59,6 +60,7 @@ warc2text -o <output_folder> [ -f <output_files> ] [ --pdfpass <output_warc> ]
 * `--paragraph-identification` print the paragraph identifier for each sentence extracted from the HTML
 * `--classifier` classifier to use: `cld2`, `fasttext`, or `skip`. When `fasttext` is used, one also has to specify a model using `--fasttext-model`. Use `skip` to skip language identification entirely.
 * `--fasttext-model` path to FastText model for fasttext classifier. Models can be any [FastText language identification model](https://fasttext.cc/docs/en/language-identification.html) such as [OpenLID lid201-model.ftz](https://github.com/laurieburchell/open-lid-dataset#quantised-model)
+* `--skip-text-extraction` Skip text extraction and output only html. This option is not compatible with "text" value in -f option and also requires to skip language identification.
 * `--tag-filters` file containing filters that are used to eliminate matching documents
 * `--invert-tag-filters` output only documents that match the filter
 * `--url-filters` file containing regular expressions that match urls of documents to eliminate
@@ -85,15 +87,20 @@ produce the following directory structure at the path specified by `--output`:
 - `./{lang}/html.gz` contains lines of base64 encoded HTML as returned by the server. For ePub, MS Office or ODF files this is the extracted XML.
 - `./{lang}/file.gz` contains the `{filename}:{offset}:{length}` pointer to the warc archive the record was extracted from. `{offset}` and `{length}` are of the compressed data, e.g. `tail -c+{offset} < {filename} | head -c{length} | gzip -cd` will give you the original record.
 - `./{lang}/date.gz` gives you the original crawl date/time as reported by the crawler. [This should be a UTC timestamp](https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/#warc-date-mandatory).
-- `./{lang}/metadata.jsonl.gz` contains the metadata as explained in the [JSONL section](#jsonl) below. Note that this output file will already contain some of the information described above, so `mime`, `url`, `file` and `date` are not needed when using `metadata`. Also note that this option will write **only** the metadata, so it will not include plain text or HTML.
+- `./{lang}/metadata.gz` contains the metadata as explained in the [JSONL section](#jsonl) below. Note that this output file will already contain some of the information described above, so `mime`, `url`, `file` and `date` are not needed when using `metadata`. Also note that this option will write **only** the metadata, so it will not include plain text or HTML.
 
 In every file, each line corresponds to the same record. E.g. the fifth line in `text.gz` and fifth line in `url.gz` together give you the text and url for a single record.
 
 The `{lang}` part of the path is determined by the classifier (see `--classifier`) and may be a two-letter or three-letter code depending on the classifier used. See [this list](https://github.com/CLD2Owners/cld2/blob/b56fa78a2fe44ac2851bae5bf4f4693a0644da7b/internal/generated_language.cc#L647-L1262) for CLD2. When skipping the language identification with `--classifier skip`, all the files will be written directly to output folder without creating language specific folders.
 
-### JSONL
-When using `--jsonl`, the output is instead a single JSON record per line, with the following keys (always in this order):
+When using `--compression zstd` files suffix will be `.zst` instead of `gz`.
 
+### JSONL
+When using `--jsonl`, the output files that previously were encoded in base64, are now written in a single JSON record per line.
+With the keys `"h"` and `"p"` for the `html` file and the `text` file respectively.
+
+#### stdout
+Instead of the classic Bitextor directory structure and files, the `--jsonl` option can be combined with `--stdout` to write all the output to stdout, with the following keys (always in this order):
 ```ts
 {
   f:  string, # filename of warc file (same as the `{filename}` part in `file.gz`)
@@ -109,7 +116,7 @@ When using `--jsonl`, the output is instead a single JSON record per line, with 
 }
 ```
 
-More keys might be added in the future (e.g. the raw HTML is not included now) and you should not expect the order of the keys to stay the same between different versions of warc2text.
+More keys might be added in the future (e.g. the raw HTML is not included in JSONL to stdout now) and you should not expect the order of the keys to stay the same between different versions of warc2text.
 
 
 ## Included dependencies

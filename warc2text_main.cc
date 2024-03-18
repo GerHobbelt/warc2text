@@ -19,11 +19,14 @@ using namespace warc2text;
 struct Options : WARCPreprocessorOptions {
     std::vector<std::string> warcs;
     std::string files;
+    bool stdout{};
     bool verbose{};
     bool silent{};
     bool jsonl{};
     std::string classifier;
     std::string fasttext_model;
+    std::string compress;
+    int compress_level;
 };
 
 static void parseArgs(int argc, const char **argv, Options& out) {
@@ -32,6 +35,7 @@ static void parseArgs(int argc, const char **argv, Options& out) {
     desc.add_options()
         ("help,h", po::bool_switch(), "Show this help message")
         ("output,o", po::value(&out.output)->default_value("."), "Output folder")
+        ("stdout", po::bool_switch(&out.stdout)->default_value(false), "Write to standard output, only valid with --jsonl")
         ("files,f", po::value(&out.files)->default_value("url,text"), "List of output files separated by commas. Default: 'url,text'. Optional: 'mime,html,file'")
         ("input,i", po::value(&out.warcs)->multitoken(), "Input WARC file name(s)")
         ("tag-filters", po::value(&out.tag_filters_filename), "Plain text file containing tag filters")
@@ -44,10 +48,13 @@ static void parseArgs(int argc, const char **argv, Options& out) {
         ("verbose,v", po::bool_switch(&out.verbose)->default_value(false), "Verbosity level")
         ("silent,s", po::bool_switch(&out.silent)->default_value(false))
         ("multilang", po::bool_switch(&out.multilang)->default_value(false), "Detect multiple languages in a single record")
-        ("jsonl", po::bool_switch(&out.jsonl)->default_value(false), "Output jsonl to stdout")
+        ("jsonl", po::bool_switch(&out.jsonl)->default_value(false), "Output in jsonl format")
         ("classifier", po::value(&out.classifier)->default_value("cld2"), "Language classifier: cld2 or fasttext (default cld2)")
         ("fasttext-model", po::value(&out.fasttext_model)->default_value(""), "Path to fasttext model")
-        ("encode-urls", po::bool_switch(&out.encodeURLs)->default_value(false), "Encode URLs obtained from WARC records");
+        ("encode-urls", po::bool_switch(&out.encodeURLs)->default_value(false), "Encode URLs obtained from WARC records")
+        ("compress", po::value(&out.compress)->default_value("gzip"), "Compression type for the output files")
+        ("compress-level", po::value<int>(&out.compress_level)->default_value(3), "Compression level for the output files")
+        ;
 
     po::positional_options_description pd;
     pd.add("input", -1);
@@ -78,8 +85,14 @@ static void parseArgs(int argc, const char **argv, Options& out) {
                 " --skip-text-extraction           Skip text extraction and output only html\n"
                 "                                  This option is not compatible with \"text\" value in -f option \n"
                 "                                  and also requires to skip language identification\n"
+                " --jsonl                          Produce \"html\" and \"text\" files in JSONLines format,\n"
+                "                                  instead of bease64 encoded lines\n"
+                " --stdout                         Write all the information in JSONLines to stdout\n"
+                "                                  Needs --jsonl option\n"
+                " --compress <compression>         Compression algorithm for the output files\n"
+                "                                  Default: gzip. Values: gzip or zstd\n"
+                " --compress-level <level>         Compression level to use\n"
                 " -s                               Only output errors\n"
-                " --jsonl                          Write JSONLines to stdout\n"
                 " -v                               Verbose output (print trace)\n\n";
         exit(1);
     }
@@ -122,11 +135,24 @@ int main(int argc, const char **argv) {
             BOOST_LOG_TRIVIAL(warning) << "If '--skip-text-extraction' is enabled, tag filters cannot be applied.";
     }
 
+    Compression compression;
+    if (options.compress == "gzip") {
+        compression = Compression::gzip;
+    } else if (options.compress == "zstd") {
+        compression = Compression::zstd;
+    } else {
+        BOOST_LOG_TRIVIAL(error) << "Invalid output compression type '" << options.compress << "'";
+        abort();
+    }
+
     std::unique_ptr<RecordWriter> writer;
-    if (options.jsonl) {
+    if (options.jsonl && options.stdout) {
         writer = std::make_unique<JSONLinesWriter>(std::cout);
     } else if (!options.output_files.empty()) {
-        writer = std::make_unique<BilangWriter>(options.output, options.output_files);
+        Format format = Format::b64;
+        if (options.jsonl)
+            format = Format::json;
+        writer = std::make_unique<BilangWriter>(options.output, options.output_files, compression, options.compress_level, format);
     } else {
         BOOST_LOG_TRIVIAL(error) << "No output files specified";
         abort();
