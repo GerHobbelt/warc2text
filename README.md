@@ -1,28 +1,38 @@
 # warc2text
+
 Extracts plain text, language identification and more metadata from WARC records
 
 ## Download
+
 Clone this repo along with submodules:
+
 ```
 git clone --recurse-submodules https://github.com/bitextor/warc2text.git
 ```
+
 Or:
+
 ```
 git clone https://github.com/bitextor/warc2text.git
 git submodule update --init --recursive
 ```
 
 ## Install dependencies
+
 On Debian/Ubuntu/Mint:
+
 ```
 apt-get install uchardet libuchardet-dev libzip-dev
 ```
+
 On Mac:
+
 ```
 brew install uchardet libzip
 ```
 
 ## Compile
+
 ```
 mkdir build
 cd build
@@ -33,10 +43,12 @@ make install
 ```
 
 ## Usage
+
 ```
 warc2text -o <output_folder> [ -f <output_files> ] [ --pdfpass <output_warc> ]
           [ --paragraph-identification ] [ --tag-filters <filters_file> ] <warc_file>...
 ```
+
 * `--output`/`-o` output folder
 * `--files`/`-f` list of output files separated by commas (and without `.gz`); `text` and `url` are always written, while `mime` and `html` are optional
 * `--pdfpass` WARC file where PDF records will be stored
@@ -47,15 +59,17 @@ warc2text -o <output_folder> [ -f <output_files> ] [ --pdfpass <output_warc> ]
 * `--verbose`/`-v` print progress and filtering information
 * `--silent`/`-s` print only warnings and errors
 
-  Tag Filter format is the following: `tag <tab> attribute <tab> regexp`
+Tag Filter format is the following: `tag <tab> attribute <tab> regexp`
   
-  For example, `meta <tab> name <tab> translation-stats` will remove documents that contain `<meta name="translation-stats" ... >`
+For example, `meta <tab> name <tab> translation-stats` will remove documents that contain `<meta name="translation-stats" ... >`
 
-  URL Filter format is a single regular expression per line.
+URL Filter format is a single regular expression per line.
 
-  Lines beginning with `#` and empty lines are ignored. Any invalid filter will raise a warning message, but will not prevent other filters from being read.
+Lines beginning with `#` and empty lines are ignored. Any invalid filter will raise a warning message, but will not prevent other filters from being read.
+
 
 ## Included dependencies
+
 HTML Tokenizer by [c-smile](https://www.codeproject.com/Articles/14076/Fast-and-Compact-HTML-XML-Scanner-Tokenizer)
 
 HTML entities decoder by [Christoph Gärtner](https://bitbucket.org/cggaertner/cstuff/src/master/entities.c)
@@ -63,6 +77,7 @@ HTML entities decoder by [Christoph Gärtner](https://bitbucket.org/cggaertner/c
 Charset detection using [uchardet](https://www.freedesktop.org/wiki/Software/uchardet/)
 
 Zip support for open document format using [libzip](https://libzip.org)
+
 ___
 
 ![Connecting Europe Facility](https://www.paracrawl.eu/images/logo_en_cef273x39.png)
