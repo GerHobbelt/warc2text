@@ -3,6 +3,7 @@
 
 #include "zlib-ng.h"
 #include <string>
+#include <cstdint>
 
 namespace warc2text {
     class WARCReader {
