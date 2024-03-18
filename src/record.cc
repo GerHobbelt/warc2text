@@ -211,14 +211,20 @@ namespace warc2text {
         int retval = util::SUCCESS;
 
         // remove HTML tags:
-        if (isPlainText)
+        if (isPlainText) {
+            // convert to utf8 if needed (we do it before cleaning tabs, unlike HTML below):
+            if (needToConvert)
+                payload = util::toUTF8(payload, charset);
             util::trimLinesCopy(payload, extracted);
-        else
+            std::replace_if(extracted.begin(), extracted.end(), [](wchar_t c){ return std::iscntrl(c) && c != '\n'; }, ' ');
+        }
+        else {
             retval = processHTML(payload, extracted, tagFilters);
 
-        // convert to utf8 if needed:
-        if (needToConvert)
-            extracted = util::toUTF8(extracted, charset);
+            // convert to utf8 if needed:
+            if (needToConvert)
+                extracted = util::toUTF8(extracted, charset);
+        }
 
         // decode HTML entities:
         if (isPlainText)
@@ -233,10 +239,8 @@ namespace warc2text {
         return text_by_langs;
     }
 
-    int Record::detectLanguage(bool multilang){
-        if (not multilang) return warc2text::detectLanguage(plaintext, language);
-
-        warc2text::detectLanguage(plaintext, text_by_langs);
+    int Record::detectLanguage(LanguageDetector const &detector){
+        detector.detect(plaintext, text_by_langs);
         return text_by_langs.size();
     }
 
