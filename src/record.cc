@@ -8,6 +8,7 @@
 #include "entities.hh"
 #include "zipreader.hh"
 #include <boost/log/trivial.hpp>
+#include <boost/locale.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
 namespace warc2text {
@@ -184,12 +185,12 @@ namespace warc2text {
         util::trim(cleanHTTPcontentType);
     }
 
-    int Record::cleanPayload(){
+    int Record::cleanPayload(bool skip_extraction){
         util::umap_tag_filters_regex tagFilters;
-        return cleanPayload(tagFilters);
+        return cleanPayload(tagFilters, skip_extraction);
     }
 
-    int Record::cleanPayload(const util::umap_tag_filters_regex& tagFilters){
+    int Record::cleanPayload(const util::umap_tag_filters_regex& tagFilters, bool skip_extraction){
 
         // we know for sure that HTTP content type is incorrect if it is present, and it is not 'text'
         bool nonTextHTTPcontentType = not cleanHTTPcontentType.empty() and textContentTypes.find(cleanHTTPcontentType) == textContentTypes.end();
@@ -219,11 +220,27 @@ namespace warc2text {
         
         int retval = util::SUCCESS;
 
+        if (skip_extraction) {
+            if (needToConvert) {
+                try {
+                    payload = util::toUTF8(payload, charset);
+                } catch (boost::locale::conv::conversion_error &e) {
+                    return util::UTF8_CONVERSION_ERROR;
+                }
+            }
+            return retval;
+        }
+
         // remove HTML tags:
         if (isPlainText) {
             // convert to utf8 if needed (we do it before cleaning tabs, unlike HTML below):
-            if (needToConvert)
-                payload = util::toUTF8(payload, charset);
+            if (needToConvert) {
+                try {
+                    payload = util::toUTF8(payload, charset);
+                } catch (boost::locale::conv::conversion_error &e) {
+                    return util::UTF8_CONVERSION_ERROR;
+                }
+            }
             util::trimLinesCopy(payload, extracted);
             std::replace_if(extracted.begin(), extracted.end(), [](wchar_t c){ return std::iscntrl(c) && c != '\n'; }, ' ');
         }
@@ -231,8 +248,13 @@ namespace warc2text {
             retval = processHTML(payload, extracted, tagFilters);
 
             // convert to utf8 if needed:
-            if (needToConvert)
-                extracted = util::toUTF8(extracted, charset);
+            if (needToConvert) {
+                try {
+                    payload = util::toUTF8(extracted, charset);
+                } catch (boost::locale::conv::conversion_error &e) {
+                    return util::UTF8_CONVERSION_ERROR;
+                }
+            }
         }
 
         // decode HTML entities:
