@@ -88,7 +88,7 @@ int main(int argc, const char **argv) {
     parseArgs(argc,argv, options);
 
     // configure logging
-    boost::log::add_console_log(std::cerr, boost::log::keywords::format = "[%TimeStamp%] [\%Severity%] %Message%");
+    boost::log::add_console_log(std::cerr, boost::log::keywords::format = "[%TimeStamp%] [%Severity%] %Message%");
     boost::log::add_common_attributes();
     auto verbosity_level = options.verbose ? boost::log::trivial::trace :
                            options.silent  ? boost::log::trivial::warning :
